@@ -1,46 +1,33 @@
 <?php
 
-
 $file = "wp-config.php";
-fopen("random-password.php", "w"); //creates a file random-password
 $current = "";
-$random_pass = "";
 $current .= "<?php\n";
 
-//setting up the database configuration
-$current .= "\ndefine( 'DB_NAME', 'teste' );";
-$current .= "\ndefine( 'DB_USER', 'root' );";
-$current .= "\ndefine( 'DB_PASSWORD', '' );";
-$current .= "\ndefine( 'DB_HOST', 'localhost' );";
-$current .= "\ndefine( 'DB_CHARSET', 'utf8mb4' );";
-$current .= "\ndefine( 'DB_COLLATE', '' );\n\n\n";
+//setting up the database base configuration
+$current .= setupDataBaseConfigs();
 
-//getting credentials 
-$auth_keys = "auth-keys.txt";
-$secret_keys = file_get_contents($auth_keys);
+// getting credentials and adding salts to wp-config file
+$current .= getSaltsLocally();
 
-// wp_remote_get("https://api.wordpress.org/secret-key/1.1/salt/");
+$current .= setupDataBasePrefix();
 
-
-
-//adding salts to wp-config file
-$current .= $secret_keys;
-
-$current .= "\n\n\n\$table_prefix = 'wp_';";
-$current .= "\n\ndefine( 'WP_DEBUG', false );";
-
-$current .= "\n\nif ( ! defined( 'ABSPATH' ) ) {";
-$current .= "\n   define( 'ABSPATH', dirname( __FILE__ ) . '/' );";
-$current .= "\n}\n\nrequire_once( ABSPATH . 'wp-settings.php' );";
-
-$current .= "?>";
-
+//end of wp-config file
 file_put_contents($file, $current);
 
+// //creating a file that stores password
+// $random_pass = "";
+// fopen("random-password.txt", "w"); 
 
-$random_pass_file = "random-password.php";
-$random_pass .= randomPassword(20);
-file_put_contents($random_pass_file, $random_pass);
+// //get the recently created file
+// $random_pass_file = "random-password.txt";
+// $random_pass .= randomPassword(20);
+
+// //write random password inside the random-password.txt file
+// file_put_contents($random_pass_file, $random_pass);
+storeRandomPassword();
+
+$random_pass = file_get_contents("random-password.txt");
 
 define( 'WP_INSTALLING', true );
 
@@ -56,8 +43,44 @@ exit;
 
 
 
+function setupDataBaseConfigs() {
+    $str_dbsetup = "";
+    $str_dbsetup .= "\ndefine( 'DB_NAME', 'teste' );";
+    $str_dbsetup .= "\ndefine( 'DB_USER', 'root' );";
+    $str_dbsetup .= "\ndefine( 'DB_PASSWORD', '' );";
+    $str_dbsetup .= "\ndefine( 'DB_HOST', 'localhost' );";
+    $str_dbsetup .= "\ndefine( 'DB_CHARSET', 'utf8mb4' );";
+    $str_dbsetup .= "\ndefine( 'DB_COLLATE', '' );\n\n\n";
+    return $str_dbsetup;
+}
+
+function setupDataBasePrefix() {
+    $current = "";
+    $current .= "\n\n\n\$table_prefix = 'wp_';";
+    $current .= "\n\ndefine( 'WP_DEBUG', false );";
+    $current .= "\n\nif ( ! defined( 'ABSPATH' ) ) {";
+    $current .= "\n   define( 'ABSPATH', dirname( __FILE__ ) . '/' );";
+    $current .= "\n}\n\nrequire_once( ABSPATH . 'wp-settings.php' );\n";
+    return $current;
+}
 
 
+function getSaltsLocally(): string {
+    $auth_keys = "auth-keys.txt";
+    $secret_keys = file_get_contents($auth_keys);
+    return $secret_keys;
+}
+
+
+function getSalts() {
+    require_once("wp-load.php" );
+    $http_salts     = wp_remote_get('https://api.wordpress.org/secret-key/1.1/salt/');
+    $returned_salts  = wp_remote_retrieve_body($http_salts);
+    $new_salts = explode("\n", $returned_salts);
+    var_dump($new_salts);
+    die;
+    return $new_salts;
+}
 
 function randomPassword($length) {
     $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
@@ -70,6 +93,15 @@ function randomPassword($length) {
     return implode($pass); //turn the array into a string
 }
 
+function storeRandomPassword() {
+    //creating a file that stores password
+    $random_pass = "";
+    fopen("random-password.txt", "w"); 
 
-//ao chamar o setup.php vai também criar um arquivo e armazenar as salts
+    //get the recently created file
+    $random_pass_file = "random-password.txt";
+    $random_pass .= randomPassword(20);
 
+    //write random password inside the random-password.txt file
+    file_put_contents($random_pass_file, $random_pass);
+}
