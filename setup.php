@@ -9,22 +9,16 @@ $current .= setupDataBaseConfigs();
 
 // getting credentials and adding salts to wp-config file
 $current .= getSaltsLocally();
-
 $current .= setupDataBasePrefix();
 
 //end of wp-config file
+// file_put_contents($file, $current);
+// $current .= getSaltsFromAPI();
 file_put_contents($file, $current);
 
-// //creating a file that stores password
-// $random_pass = "";
-// fopen("random-password.txt", "w"); 
 
-// //get the recently created file
-// $random_pass_file = "random-password.txt";
-// $random_pass .= randomPassword(20);
-
-// //write random password inside the random-password.txt file
-// file_put_contents($random_pass_file, $random_pass);
+// file_put_contents($file, $current);
+//generates and stores the random pass into a file 
 storeRandomPassword();
 
 $random_pass = file_get_contents("random-password.txt");
@@ -36,6 +30,8 @@ require_once("wp-admin/includes/upgrade.php" );
 require_once("wp-includes/wp-db.php" );
 
 wp_install( 'site-teste', 'filipe', 'filipe@gmail.com', "1", '', $random_pass, "en_GB");
+
+
 
 
 wp_redirect('wp-login.php' );
@@ -54,32 +50,29 @@ function setupDataBaseConfigs() {
     return $str_dbsetup;
 }
 
-function setupDataBasePrefix() {
-    $current = "";
-    $current .= "\n\n\n\$table_prefix = 'wp_';";
-    $current .= "\n\ndefine( 'WP_DEBUG', false );";
-    $current .= "\n\nif ( ! defined( 'ABSPATH' ) ) {";
-    $current .= "\n   define( 'ABSPATH', dirname( __FILE__ ) . '/' );";
-    $current .= "\n}\n\nrequire_once( ABSPATH . 'wp-settings.php' );\n";
-    return $current;
-}
-
-
 function getSaltsLocally(): string {
     $auth_keys = "auth-keys.txt";
     $secret_keys = file_get_contents($auth_keys);
     return $secret_keys;
 }
 
+function setupDataBasePrefix() {
+    $current = "";
+    $current .= "\n\n\n\$table_prefix = 'wp_';";
+    $current .= "\n\ndefine( 'WP_DEBUG', false );";
+    $current .= "\n\nif ( ! defined( 'ABSPATH' ) ) {";
+    $current .= "\n   define( 'ABSPATH', dirname( __FILE__ ) . '/' );";
+    $current .= "\n}\n\nrequire_once( ABSPATH . 'wp-settings.php' );\n\n";
+    return $current;
+}
 
-function getSalts() {
-    require_once("wp-load.php" );
+
+function getSaltsFromAPI() {
+    require_once("wp-load.php");
     $http_salts     = wp_remote_get('https://api.wordpress.org/secret-key/1.1/salt/');
     $returned_salts  = wp_remote_retrieve_body($http_salts);
-    $new_salts = explode("\n", $returned_salts);
-    var_dump($new_salts);
-    die;
-    return $new_salts;
+    // $new_salts = explode("\n", $returned_salts);
+    return $returned_salts;
 }
 
 function randomPassword($length) {
@@ -105,3 +98,6 @@ function storeRandomPassword() {
     //write random password inside the random-password.txt file
     file_put_contents($random_pass_file, $random_pass);
 }
+
+
+
